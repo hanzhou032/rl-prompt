@@ -5,7 +5,7 @@ import os
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from typing import Optional, Tuple, List
-
+import datasets
 from fsc_reward import PromptedClassificationReward
 
 
@@ -52,22 +52,47 @@ def load_few_shot_classification_dataset(
     base_path: str,
     num_shots: int
 ) -> Tuple[List[str]]:
-    assert dataset in ['agnews', 'cr', 'mr', 'sst-2', 
-                       'sst-5', 'yelp-2', 'yelp-5']
-    assert split in ['train', 'dev', 'test']
-    assert num_shots in [16]
+    # assert dataset in ['agnews', 'cr', 'mr', 'sst-2', 
+    #                    'sst-5', 'yelp-2', 'yelp-5']
+    # assert split in ['train', 'dev', 'test']
+    # assert num_shots in [16]
 
-    seed_dict = {0:'16-100', 1:'16-13', 2:'16-21', 3:'16-42', 4:'16-87'}
-    seed_path = seed_dict[dataset_seed]
-    filepath = f'{num_shots}-shot/{dataset}/{seed_path}/{split}.tsv'
-    full_filepath = os.path.join(base_path, filepath)
-    df = pd.read_csv(full_filepath, sep='\t')
-    if 'text' in df:
-        source_texts = df.text.tolist()
-    else: 
-        source_texts = df.sentence.tolist()
-    class_labels = df.label.tolist()
-
+    # seed_dict = {0:'16-100', 1:'16-13', 2:'16-21', 3:'16-42', 4:'16-87'}
+    # seed_path = seed_dict[dataset_seed]
+    # filepath = f'{num_shots}-shot/{dataset}/{seed_path}/{split}.tsv'
+    # full_filepath = os.path.join(base_path, filepath)
+    # df = pd.read_csv(full_filepath, sep='\t')
+    # if 'text' in df:
+    #     source_texts = df.text.tolist()
+    # else: 
+    #     source_texts = df.sentence.tolist()
+    # class_labels = df.label.tolist()
+    glue_list = ['sst2', 'rte', 'mrpc', 'qqp', 'mnli', 'qnli']
+    if dataset in glue_list:
+        data = datasets.load_dataset('glue', dataset)
+    train_dataset = data['train']
+    val_dataset = data['validation']
+    test_dataset = data['test']
+    train_0 = [x for x in train_dataset if x['label'] == 0][:num_shots]
+    train_1 = [x for x in train_dataset if x['label'] == 1][:num_shots]
+    train_2 = [x for x in train_dataset if x['label'] == 2][:num_shots]
+    train_3 = [x for x in train_dataset if x['label'] == 3][:num_shots]
+    train_dataset = train_0 + train_1 + train_2 + train_3
+    if dataset in glue_list:
+        val_0 = [x for x in train_dataset if x['label'] == 0][-num_shots:]
+        val_1 = [x for x in train_dataset if x['label'] == 1][-num_shots:]
+        val_2 = [x for x in train_dataset if x['label'] == 2][-num_shots:]
+        new_val_dataset = val_0 + val_1 + val_2
+        test_dataset = val_dataset
+    if split == 'train':
+        source_texts = [x['sentence'] for x in train_dataset]
+        class_labels = [x['label'] for x in train_dataset]
+    elif split == 'dev':
+        source_texts = [x['sentence'] for x in new_val_dataset]
+        class_labels = [x['label'] for x in new_val_dataset]
+    elif split == 'test':
+        source_texts = [x['sentence'] for x in test_dataset]
+        class_labels = [x['label'] for x in test_dataset]
     verbalizers = get_dataset_verbalizers(dataset)
     num_classes = len(verbalizers)
 
@@ -80,8 +105,9 @@ def load_few_shot_classification_dataset(
 
 
 def get_dataset_verbalizers(dataset: str) -> List[str]: 
-    if dataset in ['sst-2', 'yelp-2', 'mr', 'cr']:
-        verbalizers = ['\u0120terrible', '\u0120great'] # num_classes
+    verbalizers = None
+    if dataset in ['sst2', 'yelp-2', 'mr', 'cr']:
+        verbalizers = ['▁negative', '▁positive'] # num_classes
     elif dataset == 'agnews': 
         verbalizers = ['World', 'Sports', 'Business', 'Tech'] # num_classes
     elif dataset in ['sst-5', 'yelp-5']:
@@ -107,6 +133,7 @@ def get_dataset_verbalizers(dataset: str) -> List[str]:
                     '\u0120Village', '\u0120Animal',
                     '\u0120Plant', '\u0120Album',
                     '\u0120Film', '\u0120Written']
+    
     return verbalizers
 
 

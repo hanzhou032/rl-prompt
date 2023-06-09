@@ -33,9 +33,9 @@ class TrainerConfig:
     # Eval params
     do_eval: bool = True
     eval_batch_size: int = 16
-    eval_steps: int = -1
+    eval_steps: int = 400
     # Save params
-    do_save: bool = True
+    do_save: bool = False
     save_dir: str = './outputs'
     save_steps: int = -1
     # Optimizer params
