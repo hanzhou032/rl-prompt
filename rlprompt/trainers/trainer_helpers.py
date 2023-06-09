@@ -36,7 +36,7 @@ class TrainerConfig:
     eval_steps: int = 400
     # Save params
     do_save: bool = False
-    save_dir: str = './outputs'
+    save_dir: str = './outputs/mrpc/'
     save_steps: int = -1
     # Optimizer params
     learning_rate: float = 1e-4

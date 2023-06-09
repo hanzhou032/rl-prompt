@@ -22,9 +22,11 @@ class PromptedClassificationEvaluator:
         num_classes: int,
         verbalizers: List[str],
         template: Optional[str],
-        prompt: str
+        prompt: str,
+        dataset: str
     ):
         super().__init__()
+        self.dataset = dataset
         self.device = torch.device("cuda" if torch.cuda.is_available()
                                    else "cpu")
         self.task_lm = task_lm
@@ -54,7 +56,6 @@ class PromptedClassificationEvaluator:
             self.template = self.load_default_template()  # prompt templates
         else:
             self.template = template
-
         self.prompt = prompt
 
     # Adapted from
@@ -144,7 +145,7 @@ class PromptedClassificationEvaluator:
                         " {prompt}. In this task, you are given sentences from movie reviews. Based on the given review, classify it to one of the five classes: (1) terrible, (2) bad, (3) okay, (4) good, and (5) great. Sentence: {sentence_1}, Sentiment: ",
                         ]
             }
-        template = template_dict["sst2"][0]
+        template = template_dict[self.dataset][0]
         return template
 
     @torch.no_grad()
@@ -178,10 +179,11 @@ class PromptedClassificationEvaluator:
     def _format_prompts(
         self,
         prompts: List[str],
-        source_strs: List[str]
+        source_strs: List[str],
+        source_2_strs: List[str]
     ) -> List[str]:
-        return [self.template.format(sentence_1=s_1, prompt=prompt)
-                for s_1, prompt in zip(source_strs, prompts)]
+        return [self.template.format(sentence_1=s_1, sentence_2=s_2, prompt=prompt)
+                for s_1, s_2, prompt in zip(source_strs, source_2_strs, prompts)]
 
     def forward(
         self,
@@ -191,10 +193,13 @@ class PromptedClassificationEvaluator:
         correct_sum = 0
         for i, batch in enumerate(dataloader):
             inputs = batch['source_texts']  # List
+            inputs_2 = batch['source_2_texts']  # List
             targets = batch['class_labels']  # Tensor
             batch_size = targets.size(0)
             current_prompts = [self.prompt for _ in range(batch_size)]
-            formatted_templates = self._format_prompts(current_prompts, inputs)
+            formatted_templates = self._format_prompts(current_prompts, inputs, inputs_2)
+            if i == 0:
+                print(formatted_templates)
             # print(formatted_templates)
             all_logits = self._get_logits(formatted_templates)
             class_probs = torch.softmax(all_logits[:, self.verbalizer_ids], -1)

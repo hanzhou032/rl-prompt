@@ -20,7 +20,8 @@ class PromptedClassificationReward(BaseReward):
         correct_coeff: float, # lambda_2 in paper
         num_classes: int,
         verbalizers: List[str],
-        template: Optional[str]
+        template: Optional[str],
+        dataset: str,
     ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available()
@@ -52,6 +53,7 @@ class PromptedClassificationReward(BaseReward):
         print('Verbalizers:', self.verbalizers)
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
+        self.dataset = dataset
         if template is None:
             self.template = self.load_default_template()  # prompt templates
         else: 
@@ -139,12 +141,13 @@ class PromptedClassificationReward(BaseReward):
                         " {prompt}. In this task, you are given sentences from movie reviews. Based on the given review, classify it to one of the five classes: (1) terrible, (2) bad, (3) okay, (4) good, and (5) great. Sentence: {sentence_1}, Sentiment: ",
                         ]
             }
-        template = template_dict["sst2"][0]
+        template = template_dict[self.dataset][0]
         return template
 
     def forward(
         self,
         source_texts: List[str],
+        source_2_texts: List[str],
         class_labels: List[int],
         output_tokens: List[List[str]],
         to_tensor: bool,
@@ -168,6 +171,7 @@ class PromptedClassificationReward(BaseReward):
             # Compute LM logits
             current_prompts = [prompt for _ in source_texts]
             formatted_templates = self._format_prompts(source_texts,
+                                                       source_2_texts,
                                                        current_prompts)
             all_logits = self._get_logits(formatted_templates)
             # [batch_size, vocab_size]
@@ -297,7 +301,8 @@ class PromptedClassificationReward(BaseReward):
     def _format_prompts(
         self,
         source_strs: List[str],
+        source_2_strs: List[str],
         prompt_strs: List[str],
     ) -> List[str]:
-        return [self.template.format(sentence_1=s_1, prompt=p)
-                for s_1, p in zip(source_strs, prompt_strs)]
+        return [self.template.format(sentence_1=s_1, sentence_2=s_2, prompt=p)
+                for s_1, s_2, p in zip(source_strs, source_2_strs, prompt_strs)]

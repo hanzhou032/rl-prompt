@@ -42,7 +42,8 @@ def main(config: "DictConfig"):
         num_classes=num_classes,
         verbalizers=verbalizers,
         template=template,
-        prompt=config.prompt
+        prompt=config.prompt,
+        dataset=config.dataset
     )
 
     acc = tester.forward(test_loader)
