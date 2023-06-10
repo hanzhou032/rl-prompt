@@ -88,26 +88,78 @@ def load_few_shot_classification_dataset(
     #     source_texts = df.sentence.tolist()
     # class_labels = df.label.tolist()
     glue_list = ['sst2', 'rte', 'mrpc', 'qqp', 'mnli', 'qnli']
-    if dataset in glue_list:
+    superglue_list = ['boolq']
+    if 'xnli' in dataset:
+        sub_split = dataset.split('_')[1]
+        data = datasets.load_dataset('xnli', sub_split)
+    elif 'americas_nli' in dataset:
+        sub_split = dataset.split('_')[2]
+        data = datasets.load_dataset('americas_nli', sub_split)
+    elif dataset in glue_list:
         data = datasets.load_dataset('glue', dataset)
-    train_dataset = data['train']
-    val_dataset = data['validation']
-    test_dataset = data['test']
+    elif 'anli' in dataset:
+        data = datasets.load_dataset('anli')
+    elif dataset in superglue_list:
+        data = datasets.load_dataset('super_glue', dataset)
+    elif 'indonlp/NusaX-senti' in dataset:
+        sub_split = dataset.split('_')[1]
+        data = datasets.load_dataset('indonlp/NusaX-senti', sub_split)
+    else:
+        data = datasets.load_dataset(dataset)
+    
+    if dataset == 'mnli':
+        train_dataset = data['train']
+        val_dataset = data['validation_matched']
+        test_dataset = data['test_matched']
+    elif 'anli' in dataset:
+        split = dataset.split('_')[1]
+        train_dataset = data['train_'+split]
+        val_dataset = data['dev_'+split]
+        test_dataset = data['test_'+split]
+    elif 'americas_nli' in dataset:
+        train_dataset = data['validation']
+        val_dataset = data['validation']
+        test_dataset = data['test']
+    elif dataset == 'yelp_polarity' or dataset == 'ag_news':
+        train_dataset = data['train']
+        val_dataset = data['train']
+        test_dataset = data['test']
+    else:
+        train_dataset = data['train']
+        val_dataset = data['validation']
+        test_dataset = data['test']
     train_0 = [x for x in train_dataset if x['label'] == 0][:num_shots]
     train_1 = [x for x in train_dataset if x['label'] == 1][:num_shots]
     train_2 = [x for x in train_dataset if x['label'] == 2][:num_shots]
     train_3 = [x for x in train_dataset if x['label'] == 3][:num_shots]
     train_dataset = train_0 + train_1 + train_2 + train_3
+    flag = False
     if dataset in glue_list:
         val_0 = [x for x in train_dataset if x['label'] == 0][-num_shots:]
         val_1 = [x for x in train_dataset if x['label'] == 1][-num_shots:]
         val_2 = [x for x in train_dataset if x['label'] == 2][-num_shots:]
         new_val_dataset = val_0 + val_1 + val_2
         test_dataset = val_dataset
+    elif dataset == 'ag_news':
+        val_0 = [x for x in train_dataset if x['label'] == 0][-num_shots:]
+        val_1 = [x for x in train_dataset if x['label'] == 1][-num_shots:]
+        val_2 = [x for x in train_dataset if x['label'] == 2][-num_shots:]
+        val_3 = [x for x in train_dataset if x['label'] == 3][-num_shots:]
+        new_val_dataset = val_0 + val_1 + val_2 + val_3
+        test_dataset = val_dataset
+    else:
+        val_0 = [x for x in val_dataset if x['label'] == 0][:num_shots]
+        val_1 = [x for x in val_dataset if x['label'] == 1][:num_shots]
+        val_2 = [x for x in val_dataset if x['label'] == 2][:num_shots]
+        val_dataset = val_0 + val_1 + val_2
+        flag = True
     if split == 'train':
         source_texts, source_2_texts, class_labels = get_data(dataset, train_dataset)
     elif split == 'dev':
-        source_texts, source_2_texts, class_labels = get_data(dataset, new_val_dataset)
+        if not flag:
+            source_texts, source_2_texts, class_labels = get_data(dataset, new_val_dataset)
+        else:
+            source_texts, source_2_texts, class_labels = get_data(dataset, val_dataset)
     elif split == 'test':
         source_texts, source_2_texts, class_labels = get_data(dataset, test_dataset)
     verbalizers = get_dataset_verbalizers(dataset)

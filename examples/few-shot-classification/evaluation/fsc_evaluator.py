@@ -73,15 +73,19 @@ class PromptedClassificationEvaluator:
             # template = "{sentence_1} {prompt}"
             template_dict = {
                 "xnli": [
+                        " {prompt} {sentence_1} {sentence_2} Entailment: ",# 0.565
                         " {prompt}. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ", # 0.6984
                         "{sentence_1} {sentence_2} {prompt}: ", # 0.503
-                        " {prompt} {sentence_1} {sentence_2} Entailment: ",# 0.565
                         "Review:\n{sentence_1}\nIs this movie review sentence negative or positive?\n ",
                         " sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. {sentence_1} {sentence_2} Entailment: ",
                         " {prompt}. {sentence_1}. Based on the paragraph above, can we conclude that {sentence_2}? Options: yes neither no. Answer: ",# 0.6477
                         " {prompt}. Read the following and determine if the hypothesis can be inferred from the promise: Premise: {sentence_1}. Hypothesis: {sentence_2}? Options: Yes, Maybe, No. Answer: ", # 0.6469
                         " {prompt} erreichbar terminate Exist dislike NOT. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ",
-                        " {prompt} acela Oracle existed Different localitate. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: "
+                        " {prompt} acela Oracle existed Different localitate. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ",
+                        " {prompt} In this task, you are given a pair of sentences, sentence 1 and sentence 2. Your job is to choose whether the two sentences clearly agree (entailment)/disagree (contradiction) with each other, or if this cannot be determined (neutral). Your answer must be in the form of the letters Yes, Maybe, and No respectively. Does the sentence {sentence_1} paraphrase (that is, mean the same thing as) this sentence? {sentence_2}. ",
+                        " {prompt} Does the sentence {sentence_1} paraphrase (that is, mean the same thing as) this sentence? {sentence_2}. ",
+                        " {prompt} Premise: {sentence_1}. Hypothesis: {sentence_2}? Options: Yes, Maybe, No. Answer: ", 
+                        " {prompt} Premise: {sentence_1}. Hypothesis: {sentence_2}? ", 
                 ],
                 "mnli": [
                         " {prompt}. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ", # 0.6984
@@ -145,7 +149,10 @@ class PromptedClassificationEvaluator:
                         " {prompt}. In this task, you are given sentences from movie reviews. Based on the given review, classify it to one of the five classes: (1) terrible, (2) bad, (3) okay, (4) good, and (5) great. Sentence: {sentence_1}, Sentiment: ",
                         ]
             }
-        template = template_dict[self.dataset][0]
+        if "xnli" in self.dataset:
+            template = template_dict["xnli"][0]
+        else:
+            template = template_dict[self.dataset][0]
         return template
 
     @torch.no_grad()
