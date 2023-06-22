@@ -49,7 +49,7 @@ def make_few_shot_classification_dataset(
 
 
 def get_data(dataset_name, data) -> tuple:
-    if 'xnli' in dataset_name or dataset_name == 'mnli' or 'anli' in dataset_name or 'americas_nli' in dataset_name:
+    if 'xnli' in dataset_name or dataset_name == 'mnli' or 'anli' in dataset_name or 'americas_nli' in dataset_name or dataset_name == 'snli':
         return [d["premise"] for d in data], [d["hypothesis"] for d in data], [d["label"] for d in data]
     elif dataset_name == 'sst2':
         return [d["sentence"] for d in data], [d["sentence"] for d in data], [d["label"] for d in data]
@@ -124,6 +124,10 @@ def load_few_shot_classification_dataset(
         train_dataset = data['train']
         val_dataset = data['train']
         test_dataset = data['test']
+    elif dataset == 'snli':
+        train_dataset = [x for x in data['train'] if x['label'] != -1]
+        val_dataset = [x for x in data['validation'] if x['label'] != -1]
+        test_dataset = [x for x in data['test'] if x['label'] != -1]
     else:
         train_dataset = data['train']
         val_dataset = data['validation']
@@ -200,7 +204,7 @@ def get_dataset_verbalizers(dataset: str) -> List[str]:
     #                 '\u0120Village', '\u0120Animal',
     #                 '\u0120Plant', '\u0120Album',
     #                 '\u0120Film', '\u0120Written']
-    if 'xnli' in dataset or dataset == 'mnli' or 'anli' in dataset or 'americas_nli' in dataset:
+    if 'xnli' in dataset or dataset == 'mnli' or 'anli' in dataset or 'americas_nli' in dataset or dataset == 'snli':
         verbalizer_predefined = ['yes', 'maybe', 'no']
         # verbalizer_predefined = ['yes', 'neither', 'no']
     elif dataset == 'sst2' or dataset == 'yelp_polarity':

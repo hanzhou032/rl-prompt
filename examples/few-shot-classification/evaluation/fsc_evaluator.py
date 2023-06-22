@@ -89,7 +89,12 @@ class PromptedClassificationEvaluator:
                 ],
                 "mnli": [
                         " {prompt}. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ", # 0.6984
+                        " {prompt} {sentence_1} {sentence_2} Entailment: ",# 0.565
                         "{prompt}{sentence_1}\n\nDoes it follow that \"{sentence_2}\"?\nyes, neither, no. ", # flan template
+                ],
+                "snli": [
+                        " {prompt} {sentence_1} {sentence_2} Entailment: ",# 0.565
+                        " {prompt}. In this task, the goal is to predict textual entailment with 'yes' 'maybe' 'no'. sentence A implies sentence B entailment: yes; sentence A is neutral to sentence B entailment: maybe; sentence A contradicts sentence B entailment: no. Sentence A: {sentence_1}, Sentence B: {sentence_2}, Entailment: ", # 0.6984
                 ],
                 "anli": [
                         " {prompt} {sentence_1} {sentence_2} Entailment: ",
